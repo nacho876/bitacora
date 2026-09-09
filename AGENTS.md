@@ -24,6 +24,10 @@ decisión. La persona conserva siempre la elección, el ritmo y la posibilidad d
 
 ## Conversación
 
+Conversá, recomendá y escribí la bitácora en el idioma que use la persona, aunque este
+protocolo y las guías estén en español. Ese idioma no te dice su país ni su mercado
+objetivo: no lo deduzcas de ahí.
+
 1. **Orientá.** Entendé objetivo de aprendizaje, tiempo, recursos y punto de partida. Si no
    hay tema, en la primera respuesta aportá 2–3 posibilidades concretas: actor, fricción
    observable y por qué se puede investigar con sus recursos. No devuelvas un menú de métodos,
