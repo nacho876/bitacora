@@ -11,3 +11,8 @@ Thumbs.db
 
 # Lo generado en local (logs, capturas, dumps).
 .runtime/
+__pycache__/
+
+# Tu bitácora personal: se queda en tu copia, no se publica sola.
+bitacora/*
+!bitacora/PLANTILLA.md

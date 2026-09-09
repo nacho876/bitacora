@@ -15,7 +15,13 @@ Ela foi pensada para quem quer empreender, mas ainda não tem uma direção clar
 3. **Escolha o que contrastar.** Quando quiser, priorize um ou mais candidatos. O guia compara evidências, alternativas, acesso e objeções; uma tendência ou concorrente não é apresentada como validação.
 4. **Decida o próximo experimento.** Considerando seus objetivos, tempo e recursos, você recebe uma recomendação fundamentada e sua principal objeção. Só você decide aprofundar, descartar, manter opções abertas ou pausar. Se escolher uma oportunidade, o guia pode sugerir um experimento pequeno; nunca o executa por você.
 
+## Uma nota sobre o idioma
+
+`AGENTS.md` e a pasta `guias/` estão escritos em espanhol — é lá que vive o protocolo em si. Você não precisa lê-los nem traduzi-los: o guia vai conversar, recomendar e escrever sua bitácora no idioma que você usar, sem supor seu país ou mercado-alvo a partir disso.
+
 ## Comece em três passos
+
+Você precisa de um assistente de programação com IA capaz de ler `AGENTS.md` — por exemplo, [Claude Code](https://claude.com/claude-code) ou [Cursor](https://cursor.com); a maioria desses assistentes exige uma assinatura paga. Python **não** é necessário para usar Bitácora: só é preciso para rodar as verificações locais do protocolo (veja abaixo).
 
 1. Clone ou baixe este repositório no seu computador.
 2. Abra a pasta com um assistente de programação com IA que consiga ler [`AGENTS.md`](AGENTS.md).
@@ -25,10 +31,11 @@ Você não precisa instalar um aplicativo nem preencher um formulário. Bitácor
 
 ## Privacidade e limites
 
+- Sua conversa viaja até o provedor de IA do assistente que você usa (por exemplo, a Anthropic, se você usa o Claude Code); confira a política de privacidade dele antes de compartilhar algo sensível.
 - Trabalhe na sua própria cópia do repositório. O guia não deve salvar nem repetir nomes, contatos, empregador, endereço ou outros identificadores; para detalhes sensíveis, propõe uma versão geral e pede confirmação antes de salvar.
-- Sua bitácora não é compartilhada com outra pessoa, a menos que vocês cocriem explicitamente no mesmo repositório. Bitácora não envia mensagens, não publica, não faz compras nem gastos em seu nome.
+- Sua bitácora pessoal vive em `bitacora/`, e o `.gitignore` a mantém fora do git: ela nunca é enviada sozinha quando você faz um commit. Também não é compartilhada com outra pessoa, a menos que vocês cocriem explicitamente no mesmo repositório. Bitácora não envia mensagens, não publica, não faz compras nem gastos em seu nome.
 - Ela separa evidência de hipótese. Uma fonte não lida, um exemplo, uma tendência ou a existência de concorrentes não prova, por si só, demanda ou que uma oportunidade funcionará.
-- Os materiais em [`pruebas/`](pruebas/) são exemplos fictícios: verificam o protocolo e não são memórias reais nem evidência de mercado.
+- Os materiais em [`pruebas/`](pruebas/) são exemplos fictícios: verificam o protocolo e não são memórias reais nem evidência de mercado. Você pode ler [um exemplo completo de conversa](pruebas/conversacion-01.md) para ver como funciona na prática.
 - Não substitui pesquisa, validação com pessoas, aconselhamento profissional ou execução. Não cria um plano de negócios completo, não abre uma empresa e não garante resultados.
 
 ## Dentro do repositório
@@ -40,15 +47,18 @@ Você não precisa instalar um aplicativo nem preencher um formulário. Bitácor
 | [`guias/`](guias/) | Guias de contraste e memória, consultados quando necessário. |
 | [`pruebas/`](pruebas/) | Exemplos fictícios e verificações do comportamento esperado. |
 | [`scripts/`](scripts/) | Utilitários para verificar o protocolo e avaliar conversas. |
+| [`LICENSE`](LICENSE) | A licença MIT sob a qual este repositório é publicado. |
 
 ## Verificações locais
 
 ```text
-python scripts/lint_protocolo.py
-python -m unittest discover -s pruebas -p test_evaluar.py
-python scripts/evaluar_conversaciones.py --help
+python3 scripts/lint_protocolo.py
+python3 -m unittest discover -s pruebas
+python3 scripts/evaluar_conversaciones.py --help
 ```
+
+No Windows, onde `python3` geralmente não existe, use `python` no lugar.
 
 ## Licença e contribuições
 
-Bitácora é um ponto de partida aberto para explorar conversas melhores sobre empreendedorismo. Antes de alterar o protocolo, leia [`AGENTS.md`](AGENTS.md), preserve a diferença entre evidência e hipóteses e não transforme uma sugestão em promessa de resultado.
+Bitácora é publicado sob a licença [MIT](LICENSE): você pode usá-lo, copiá-lo e modificá-lo livremente, inclusive para fins comerciais, desde que credite a licença original. Antes de alterar o protocolo, leia [`AGENTS.md`](AGENTS.md), preserve a diferença entre evidência e hipóteses e não transforme uma sugestão em promessa de resultado.
