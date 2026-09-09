@@ -231,8 +231,14 @@ class TestGitignore(unittest.TestCase):
                 "una bitácora personal nueva en bitacora/ debería quedar ignorada por git",
             )
 
+            # `--no-index` es imprescindible aquí: sin él, git responde "no ignorada" para
+            # cualquier fichero seguido, y PLANTILLA.md lo está, así que la comprobación se
+            # cumpliría sola aunque `.gitignore` se la llevara por delante. Con --no-index se
+            # pregunta lo que de verdad importa: qué dicen las reglas. Que la plantilla quede
+            # ignorada rompe a quien la borre, la mueva o la recree: ya no podría volver a
+            # añadirla.
             plantilla = subprocess.run(
-                ["git", "check-ignore", "-q", str(bitacora_dir / "PLANTILLA.md")],
+                ["git", "check-ignore", "-q", "--no-index", str(bitacora_dir / "PLANTILLA.md")],
                 cwd=REPO_ROOT,
                 capture_output=True,
             )
