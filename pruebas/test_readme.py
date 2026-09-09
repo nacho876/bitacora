@@ -74,6 +74,97 @@ def _contiene_todas(texto_low, palabras):
     return all(p.lower() in texto_low for p in palabras)
 
 
+def _git_toplevel_de_repo_root():
+    """Raíz del árbol de trabajo git que contiene REPO_ROOT, o None si no hay ninguno.
+
+    Descargar el repositorio como ZIP no trae `.git`: `git rev-parse` falla y
+    devolvemos None. Descomprimirlo DENTRO de otro repositorio git sí da un árbol,
+    pero su raíz no es REPO_ROOT: lo distinguimos comparando toplevels.
+    """
+    try:
+        dentro = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if dentro.returncode != 0 or dentro.stdout.strip() != "true":
+        return None
+    top = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if top.returncode != 0 or not top.stdout.strip():
+        return None
+    return Path(top.stdout.strip()).resolve()
+
+
+def _exigir_arbol_git_propio(test):
+    """Salta el test EXPLÍCITAMENTE si REPO_ROOT no es la raíz de su propio árbol git."""
+    top = _git_toplevel_de_repo_root()
+    if top is None:
+        test.skipTest(
+            "sin árbol de trabajo git (repositorio descargado como ZIP): esta "
+            "comprobación necesita git y se omite a propósito, no en silencio"
+        )
+    if top != REPO_ROOT:
+        test.skipTest(
+            f"el repositorio está descomprimido dentro de OTRO árbol git ({top}): "
+            "git respondería por el .gitignore del repositorio padre, así que esta "
+            "comprobación se omite a propósito"
+        )
+
+
+def _ficheros_versionados():
+    resultado = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    return [p for p in resultado.stdout.split("\0") if p]
+
+
+# R4, tercera cláusula: "Python solo para las comprobaciones, no para usar Bitácora".
+# Por README, la negación que debe acompañar a "python" y una palabra que ate la frase
+# a las comprobaciones. Que aparezca la palabra "python" no basta: el bloque de
+# comandos ya la trae.
+FRASE_PYTHON_OPCIONAL = {
+    "README.md": (["no"], ["comprobacion"]),
+    "README.en.md": (["not"], ["check"]),
+    "README.pt-BR.md": (["não", "nao"], ["verificaç", "verificac"]),
+}
+
+# Encabezado de la sección de los tres pasos de inicio, por README.
+HEADING_TRES_PASOS = {
+    "README.md": "## Empezá en tres pasos",
+    "README.en.md": "## Start in three steps",
+    "README.pt-BR.md": "## Comece em três passos",
+}
+
+
+def _sin_bloques_de_codigo(texto):
+    return re.sub(r"```.*?```", "", texto, flags=re.DOTALL)
+
+
+def _sin_linea_conmutador(texto):
+    """El texto sin la línea del conmutador de idiomas de la cabecera.
+
+    Esa línea (`[Español](README.md) · [English](README.en.md) · ...`) mete la
+    palabra "Español" en los tres README y haría pasar en vano cualquier búsqueda
+    del aviso de idioma de R8.
+    """
+    return "\n".join(
+        linea
+        for linea in texto.splitlines()
+        if not ("(README.md)" in linea and "(README.en.md)" in linea and "(README.pt-BR.md)" in linea)
+    )
+
+
 class TestEnlacesREADME(unittest.TestCase):
     """R1, R9, C-24: todo enlace relativo de los tres README lleva a algo que existe."""
 
@@ -85,6 +176,23 @@ class TestEnlacesREADME(unittest.TestCase):
                 if not (REPO_ROOT / destino).exists():
                     rotos.append(f"{readme} -> {destino}")
         self.assertEqual([], rotos, f"enlaces rotos encontrados: {rotos}")
+
+        # El disco no es el árbol publicado: un enlace a un fichero ignorado por
+        # git pasaría lo anterior y daría 404 en GitHub. Exigimos que cada destino
+        # esté versionado.
+        _exigir_arbol_git_propio(self)
+        versionados = _ficheros_versionados()
+        no_publicados = []
+        for readme in README_FILES:
+            for destino in _enlaces_relativos(_leer(readme)):
+                d = destino.rstrip("/")
+                if not any(p == d or p.startswith(d + "/") for p in versionados):
+                    no_publicados.append(f"{readme} -> {destino}")
+        self.assertEqual(
+            [],
+            no_publicados,
+            f"enlaces a ficheros no versionados (404 en GitHub): {no_publicados}",
+        )
 
     def test_enlaza_ejemplo_de_conversacion_real(self):
         # R9 (caso límite): el ejemplo de conversación real está enlazado y existe.
@@ -106,6 +214,7 @@ class TestGitignore(unittest.TestCase):
     """
 
     def test_ignora_bitacora_personal_pero_no_la_plantilla(self):
+        _exigir_arbol_git_propio(self)
         bitacora_dir = REPO_ROOT / "bitacora"
         bitacora_dir.mkdir(exist_ok=True)
         prueba = bitacora_dir / "__prueba-git-status.md"
@@ -141,6 +250,7 @@ class TestGitignore(unittest.TestCase):
         self.assertIn(".runtime/", gitignore)
 
     def test_bitacora_publicada_solo_tiene_plantilla(self):
+        _exigir_arbol_git_propio(self)
         resultado = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "bitacora"],
             cwd=REPO_ROOT,
@@ -161,7 +271,14 @@ class TestREADMEsCoherentes(unittest.TestCase):
     def test_licencia_mit_enlazada(self):
         licencia = REPO_ROOT / "LICENSE"
         self.assertTrue(licencia.exists(), "falta el fichero LICENSE")
-        self.assertIn("MIT", licencia.read_text(encoding="utf-8"))
+        licencia_texto = licencia.read_text(encoding="utf-8")
+        self.assertIn("MIT", licencia_texto)
+        # R3: "a nombre de Nacho" — el titular del copyright, no solo el tipo.
+        self.assertRegex(
+            licencia_texto,
+            r"Copyright \(c\) \d{4} Nacho",
+            "el LICENSE no lleva el copyright a nombre de Nacho",
+        )
         for readme in README_FILES:
             texto = _leer(readme)
             self.assertIn("MIT", texto, f"{readme} no nombra la licencia MIT")
@@ -187,10 +304,42 @@ class TestREADMEsCoherentes(unittest.TestCase):
                 _contiene_todas(texto_low, PALABRAS_PAGO[readme]),
                 f"{readme} no avisa de que los asistentes suelen requerir pago",
             )
-            self.assertIn(
-                "python",
-                texto_low,
-                f"{readme} no menciona Python",
+
+            # R4: no basta con que "python" aparezca (el bloque de comandos ya la
+            # trae). Tiene que estar la afirmación de que solo hace falta para las
+            # comprobaciones, negación incluida, fuera del bloque de código.
+            prosa_low = _sin_bloques_de_codigo(texto).lower()
+            negaciones, palabras_chequeo = FRASE_PYTHON_OPCIONAL[readme]
+            frases_python = [
+                frase for frase in re.split(r"[.\n]+", prosa_low) if "python" in frase
+            ]
+            afirma_opcional = any(
+                _contiene_alguna(frase, negaciones)
+                and _contiene_alguna(frase, palabras_chequeo)
+                for frase in frases_python
+            )
+            self.assertTrue(
+                afirma_opcional,
+                f"{readme} no dice que Python solo se necesita para las "
+                "comprobaciones, no para usar Bitácora",
+            )
+
+            # El nombre de este test promete un orden: los requisitos van ANTES del
+            # primer paso de la sección de inicio.
+            pos_requisitos = prosa_low.find("python")
+            idx_heading = prosa_low.find(HEADING_TRES_PASOS[readme].lower())
+            self.assertNotEqual(
+                -1, idx_heading, f"{readme} no tiene la sección de los tres pasos"
+            )
+            paso_uno = re.search(r"\n\s*1\.\s", prosa_low[idx_heading:])
+            self.assertIsNotNone(
+                paso_uno, f"{readme} no tiene una lista numerada de pasos de inicio"
+            )
+            self.assertLess(
+                pos_requisitos,
+                idx_heading + paso_uno.start(),
+                f"{readme}: el párrafo de requisitos aparece después del primer "
+                "paso de inicio, no antes",
             )
 
     def test_privacidad_honesta(self):
@@ -209,13 +358,23 @@ class TestREADMEsCoherentes(unittest.TestCase):
 
     def test_aviso_de_idioma_en_traducciones(self):
         for readme, palabras in PALABRAS_AVISO_IDIOMA.items():
-            texto_low = _leer(readme).lower()
-            self.assertTrue(
-                _contiene_alguna(texto_low, palabras),
-                f"{readme} no avisa de que AGENTS.md y guias/ están en español",
+            # Sin la línea del conmutador: si no, "Español" se cuela por
+            # `[Español](README.md)` y la mitad de R8 pasaría en vano.
+            cuerpo = _sin_linea_conmutador(_leer(readme))
+            cuerpo_low = cuerpo.lower()
+            parrafos = re.split(r"\n\s*\n", cuerpo_low)
+            avisa_del_espanol = any(
+                _contiene_alguna(parrafo, palabras)
+                and ("agents.md" in parrafo or "guias/" in parrafo)
+                for parrafo in parrafos
             )
             self.assertTrue(
-                "idioma" in texto_low or "language" in texto_low,
+                avisa_del_espanol,
+                f"{readme} no avisa de que AGENTS.md y guias/ están redactados en "
+                "español (idioma que le falta nombrar junto al protocolo)",
+            )
+            self.assertTrue(
+                "idioma" in cuerpo_low or "language" in cuerpo_low,
                 f"{readme} no dice que la guía responde en el idioma de quien lee",
             )
 
@@ -258,6 +417,50 @@ class TestInstruccionDeIdioma(unittest.TestCase):
             "mercado",
             texto_low,
             "AGENTS.md no aclara que el idioma no revela el mercado objetivo",
+        )
+
+
+class TestConversacionDeEjemplo(unittest.TestCase):
+    """R11: pruebas/conversacion-01.md es una conversación, y nada más."""
+
+    EJEMPLO = "pruebas/conversacion-01.md"
+
+    # Marcadores del informe interno de evaluación que NO deben publicarse.
+    MARCADORES_INFORME_INTERNO = [
+        "No acreditado",
+        "USD",
+        ".runtime/",
+        "002-exploracion-problemas",
+        "FAIL R1",
+        "No apto",
+    ]
+
+    def test_sin_el_informe_interno_de_evaluacion(self):
+        texto = _leer(self.EJEMPLO)
+        presentes = [m for m in self.MARCADORES_INFORME_INTERNO if m in texto]
+        self.assertEqual(
+            [],
+            presentes,
+            f"{self.EJEMPLO} conserva marcadores del informe interno: {presentes}",
+        )
+        titulo = texto.splitlines()[0].lower()
+        self.assertNotIn(
+            "reales",
+            titulo,
+            f"el título de {self.EJEMPLO} sigue anunciando ejecuciones «reales»",
+        )
+
+    def test_conserva_la_transcripcion_y_el_aviso_de_ficcion(self):
+        texto_low = _leer(self.EJEMPLO).lower()
+        self.assertIn(
+            "ficticia",
+            texto_low,
+            f"{self.EJEMPLO} no conserva el aviso de que la conversación es ficticia",
+        )
+        self.assertIn(
+            "**guía:**",
+            texto_low,
+            f"{self.EJEMPLO} no conserva la transcripción de la conversación",
         )
 
 
