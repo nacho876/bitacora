@@ -1,3 +1,4 @@
 # Bitácora · CLAUDE.md
 
-Bitácora se define en [`AGENTS.md`](./AGENTS.md). Leelo; esta redirección evita duplicados.
+Leé y seguí @AGENTS.md: contiene el protocolo de Bitácora.
+Consultá las guías solo cuando el protocolo lo indique.

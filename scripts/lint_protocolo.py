@@ -16,7 +16,7 @@ def require(path, fragments):
 def main():
     require(ROOT / "AGENTS.md", ["Bitácora", "experiencia, curiosidad", "no tener tema", "primera respuesta aportá 2–3", "como máximo una pregunta", "pausar",
             "sin contenido verificado", "no acreditan acceso real", "no pidas permiso por cada consulta",
-            "no reconfirmación", "guias/contraste.md", "guias/memoria.md", "resumen activo"])
+            "no reconfirmación", "guias/contraste.md", "guias/memoria.md", "resumen activo", "bitacora/ACTUAL.md", "sin rellenar ni modificar la plantilla"])
     require(ROOT / "guias/contraste.md", ["conducta", "usuario y comprador", "mercado objetivo",
             "entrevistas u observaciones separadas", "independientes aunque", "señal directa", "contexto indirecto",
             "Hipótesis de oportunidad", "objeción decisiva", "no hay hipótesis de oportunidad sustentada"])

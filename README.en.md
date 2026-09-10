@@ -8,6 +8,8 @@ Bitácora helps turn an experience, a curiosity, an outside idea—or simply “
 
 It is for people who want to start a business but do not yet have a clear direction, or who want to test one they already have. You set the pace: open options, investigate several, choose one, go back, or pause.
 
+When you pause, your personal file keeps a summary of options, decisions and remaining uncertainty so you can resume in a new conversation.
+
 ## How it works
 
 1. **Start where you are.** Share an experience, a curiosity, an idea you saw, or say you have no topic yet. The guide offers possibilities and questions that could change a decision; it does not require a questionnaire or a fully formed idea.
@@ -24,18 +26,22 @@ It is for people who want to start a business but do not yet have a clear direct
 You need an AI coding assistant able to read `AGENTS.md` — for example, [Claude Code](https://claude.com/claude-code) or [Cursor](https://cursor.com); most of these assistants require a paid subscription. Python is **not** required to use Bitácora: you only need it to run the protocol's local checks (see below).
 
 1. Clone or download this repository to your computer.
-2. Open the folder with an AI coding assistant that can read [`AGENTS.md`](AGENTS.md).
+2. With Claude Code installed and authenticated, open a terminal in the downloaded folder and run `claude`. Allow reading the project instructions: `CLAUDE.md` points to [`AGENTS.md`](AGENTS.md).
 3. Start a conversation naturally. For example: *“I want to learn entrepreneurship, but I do not know where to begin.”*
 
 You do not need to install an application or complete a form. Bitácora is a repository of instructions for a compatible assistant and works from your local copy.
+
+You need read permission for the protocol and write permission to save `bitacora/ACTUAL.md`. Verified external sources require browsing and access to their content; otherwise the guide must state the limitation. Pausing produces a summary of options, decisions and uncertainty. Start a new conversation in the same folder and say “Let’s resume”. The template stays unchanged. For earlier memory, provide its path when asked.
+
+These are behavioral instructions, not technical isolation: compliance depends on the assistant and its permissions. `.gitignore` does not prevent assistant reads or remove provider history, memory or backups. Cursor has an entry rule, but selective reading and resuming remain untested; other platforms are not verified either.
 
 ## Privacy and boundaries
 
 - Your conversation travels to the AI provider behind the assistant you use (for example, Anthropic if you use Claude Code); check its privacy policy before sharing anything sensitive.
 - Work in your own copy of the repository. The guide must not save or repeat names, contact details, employer, address, or other identifiers; for sensitive details, it proposes a general version and asks for confirmation before saving it.
-- Your personal journal lives in `bitacora/`, and `.gitignore` keeps it out of git: it is never uploaded on its own when you commit. It is also not shared with another person unless you explicitly co-create in the same repository. Bitácora does not send messages, publish, make purchases, or spend money on your behalf.
+- Your personal journal lives in `bitacora/`, and `.gitignore` keeps it out of git: it is never uploaded on its own when you commit. The protocol forbids sharing it with another person unless you explicitly co-create in the same repository. The protocol forbids executing contacts, publications, purchases or spending on your behalf.
 - It separates evidence from hypotheses. An unread source, an example, a trend, or the existence of competitors does not by itself prove demand or that an opportunity will work.
-- The material in [`pruebas/`](pruebas/) consists of fictional examples: it checks the protocol and is neither real memory nor market evidence. You can read [a full example conversation](pruebas/conversacion-01.md) to see it in practice.
+- [`pruebas/`](pruebas/) contains fictional illustrations, tests and separately identified evaluation reports. Examples are neither real memory nor market evidence. You can read [a full example conversation](pruebas/conversacion-01.md) to see it in practice.
 - It does not replace research, validation with people, professional advice, or execution. It does not produce a complete business plan, incorporate a company, or guarantee outcomes.
 
 ## Inside the repository
@@ -50,6 +56,8 @@ You do not need to install an application or complete a form. Bitácora is a rep
 | [`LICENSE`](LICENSE) | The MIT license this repository is published under. |
 
 ## Local checks
+
+The [2026-09-09 evaluation](pruebas/evaluacion-20260909.md) separates real tests from observed limitations: commercial comparison remains partial. See [CONTRIBUTING.md](CONTRIBUTING.md) to reproduce the checks.
 
 ```text
 python3 scripts/lint_protocolo.py

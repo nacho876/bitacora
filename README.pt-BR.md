@@ -8,6 +8,8 @@ Bitácora ajuda a transformar uma experiência, uma curiosidade, uma ideia que v
 
 Ela foi pensada para quem quer empreender, mas ainda não tem uma direção clara, ou quer testar uma que já tem. Você define o ritmo: pode abrir opções, investigar várias, escolher uma, voltar ou pausar.
 
+Ao pausar, seu arquivo pessoal conserva um resumo de opções, decisões e incertezas para retomar em uma nova conversa.
+
 ## Como funciona
 
 1. **Comece de onde está.** Conte uma experiência, uma curiosidade, uma ideia que viu ou diga que ainda não tem tema. O guia apresenta possibilidades e perguntas que podem mudar uma decisão, sem exigir questionário nem uma ideia pronta.
@@ -24,18 +26,22 @@ Ela foi pensada para quem quer empreender, mas ainda não tem uma direção clar
 Você precisa de um assistente de programação com IA capaz de ler `AGENTS.md` — por exemplo, [Claude Code](https://claude.com/claude-code) ou [Cursor](https://cursor.com); a maioria desses assistentes exige uma assinatura paga. Python **não** é necessário para usar Bitácora: só é preciso para rodar as verificações locais do protocolo (veja abaixo).
 
 1. Clone ou baixe este repositório no seu computador.
-2. Abra a pasta com um assistente de programação com IA que consiga ler [`AGENTS.md`](AGENTS.md).
+2. Com Claude Code instalado e autenticado, abra um terminal na pasta baixada e execute `claude`. Permita a leitura das instruções do projeto: `CLAUDE.md` remete a [`AGENTS.md`](AGENTS.md).
 3. Inicie uma conversa naturalmente. Por exemplo: *“Quero aprender a empreender, mas não sei por onde começar.”*
 
 Você não precisa instalar um aplicativo nem preencher um formulário. Bitácora é um repositório de instruções para usar com um assistente compatível e funciona na sua cópia local.
+
+São necessárias permissões de leitura do protocolo e escrita para salvar `bitacora/ACTUAL.md`. Fontes externas verificadas exigem navegação e acesso ao conteúdo; sem isso, o guia deve explicar a limitação. Ao pausar, fica um resumo de opções, decisões e incertezas. Abra uma nova conversa na mesma pasta e diga “Vamos retomar”. A PLANTILLA.md permanece intacta. Para memórias anteriores, informe o caminho quando solicitado.
+
+São instruções de conduta, não isolamento técnico: o cumprimento depende do assistente e das permissões. `.gitignore` não impede leituras pelo assistente nem apaga histórico, memória ou cópias do provedor. Cursor tem uma regra de entrada, mas leitura seletiva e retomada ainda não foram testadas; outras plataformas também não estão verificadas.
 
 ## Privacidade e limites
 
 - Sua conversa viaja até o provedor de IA do assistente que você usa (por exemplo, a Anthropic, se você usa o Claude Code); confira a política de privacidade dele antes de compartilhar algo sensível.
 - Trabalhe na sua própria cópia do repositório. O guia não deve salvar nem repetir nomes, contatos, empregador, endereço ou outros identificadores; para detalhes sensíveis, propõe uma versão geral e pede confirmação antes de salvar.
-- Sua bitácora pessoal vive em `bitacora/`, e o `.gitignore` a mantém fora do git: ela nunca é enviada sozinha quando você faz um commit. Também não é compartilhada com outra pessoa, a menos que vocês cocriem explicitamente no mesmo repositório. Bitácora não envia mensagens, não publica, não faz compras nem gastos em seu nome.
+- Sua bitácora pessoal vive em `bitacora/`, e o `.gitignore` a mantém fora do git: ela nunca é enviada sozinha quando você faz um commit. O protocolo proíbe compartilhá-la com outra pessoa, a menos que vocês cocriem explicitamente no mesmo repositório. O protocolo proíbe executar contatos, publicações, compras ou gastos em seu nome.
 - Ela separa evidência de hipótese. Uma fonte não lida, um exemplo, uma tendência ou a existência de concorrentes não prova, por si só, demanda ou que uma oportunidade funcionará.
-- Os materiais em [`pruebas/`](pruebas/) são exemplos fictícios: verificam o protocolo e não são memórias reais nem evidência de mercado. Você pode ler [um exemplo completo de conversa](pruebas/conversacion-01.md) para ver como funciona na prática.
+- [`pruebas/`](pruebas/) contém ilustrações fictícias, testes e relatórios de avaliação identificados separadamente. Os exemplos não são memórias reais nem evidência de mercado. Você pode ler [um exemplo completo de conversa](pruebas/conversacion-01.md) para ver como funciona na prática.
 - Não substitui pesquisa, validação com pessoas, aconselhamento profissional ou execução. Não cria um plano de negócios completo, não abre uma empresa e não garante resultados.
 
 ## Dentro do repositório
@@ -50,6 +56,8 @@ Você não precisa instalar um aplicativo nem preencher um formulário. Bitácor
 | [`LICENSE`](LICENSE) | A licença MIT sob a qual este repositório é publicado. |
 
 ## Verificações locais
+
+A [avaliação de 2026-09-09](pruebas/evaluacion-20260909.md) distingue testes reais e limitações observadas: o contraste comercial continua parcial. Veja [CONTRIBUTING.md](CONTRIBUTING.md) para reproduzir as verificações.
 
 ```text
 python3 scripts/lint_protocolo.py
