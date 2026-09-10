@@ -42,7 +42,12 @@ def usage_from(event):
 
 def extract_jsonl(path):
     events, errors, models, tools, model_usage, thinking = [], [], [], [], [], None
-    for raw in path.read_text(encoding="utf-8").splitlines():
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        errors.append("error de decodificación: el archivo no es UTF-8 válido")
+        lines = []
+    for raw in lines:
         if not raw.strip():
             continue
         try:
