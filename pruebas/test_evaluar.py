@@ -114,6 +114,30 @@ class RobustezTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn('Traceback', result.stderr)
 
+class EncodingTests(unittest.TestCase):
+    INVALID = b'{"type":"result","result":"hola \xff","usage":{"input_tokens":0}}\n'
+
+    def test_invalid_utf8_reports_error_and_preserves_original(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'invalid.jsonl'
+            path.write_bytes(self.INVALID)
+            result = extract_jsonl(path)
+            self.assertEqual(path.read_bytes(), self.INVALID)
+        self.assertEqual(result['status'], 'error')
+        self.assertTrue(any('UTF-8' in error for error in result['errors']))
+        self.assertTrue(all(value is None for value in result['usage'].values()))
+
+    def test_invalid_utf8_cli_nonzero_without_traceback(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'invalid.jsonl'
+            path.write_bytes(self.INVALID)
+            result = runner.subprocess.run([sys.executable, str(runner.ROOT/'scripts/evaluar_conversaciones.py'), '--jsonl', str(path)], capture_output=True, text=True)
+            self.assertEqual(path.read_bytes(), self.INVALID)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(json.loads(result.stdout)['status'], 'error')
+
+
 class RunnerEvidenceTests(unittest.TestCase):
     def simulate(self, mode):
         commands = []
