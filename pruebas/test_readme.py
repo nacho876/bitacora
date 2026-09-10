@@ -194,8 +194,8 @@ class TestEnlacesREADME(unittest.TestCase):
             f"enlaces a ficheros no versionados (404 en GitHub): {no_publicados}",
         )
 
-    def test_enlaza_ejemplo_de_conversacion_real(self):
-        # R9 (caso límite): el ejemplo de conversación real está enlazado y existe.
+    def test_enlaza_ejemplo_de_conversacion(self):
+        # El ejemplo ilustrativo está enlazado y existe.
         ejemplo = REPO_ROOT / "pruebas" / "conversacion-01.md"
         self.assertTrue(ejemplo.exists(), "falta pruebas/conversacion-01.md en el repo")
         for readme in README_FILES:
@@ -468,6 +468,23 @@ class TestConversacionDeEjemplo(unittest.TestCase):
             texto_low,
             f"{self.EJEMPLO} no conserva la transcripción de la conversación",
         )
+
+
+class TestMemoriaDemostrada(unittest.TestCase):
+    def test_demo_summary_precedes_history_and_template_stays_empty(self):
+        demo = _leer("pruebas/conversacion-01.md")
+        self.assertIn("bitacora/ACTUAL.md", demo)
+        self.assertLess(demo.index("## Resumen activo"), demo.index("## Mapa de exploración"))
+        summary = demo.split("## Resumen activo", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("ficticio", summary)
+        self.assertIn("sin elegir", summary)
+        self.assertIn("- Objetivo y recursos:\n", _leer("bitacora/PLANTILLA.md"))
+
+    def test_actual_memory_is_ignored(self):
+        _exigir_arbol_git_propio(self)
+        result = subprocess.run(["git", "check-ignore", "--no-index", "bitacora/ACTUAL.md"],
+                                cwd=REPO_ROOT, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
 
 
 if __name__ == "__main__":
