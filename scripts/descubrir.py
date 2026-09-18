@@ -19,6 +19,7 @@ def parser():
     start = commands.add_parser('iniciar', help='Guardar alcance antes de consultar fuentes')
     for flag in ('objetivo', 'tema', 'mercado-idioma'):
         start.add_argument('--' + flag, required=True)
+    start.add_argument('--mercado-pais', default='', help='Código ISO alfa-2 separado del idioma, por ejemplo AR')
     start.add_argument('--fuentes', required=True, nargs='+', help='hn, se[:sitio], discourse:https://foro')
     start.add_argument('--limite', type=int, required=True, help='1–100 resultados por fuente')
     fetch = commands.add_parser('recopilar')
@@ -33,6 +34,13 @@ def parser():
     imp.add_argument('run')
     imp.add_argument('url')
     imp.add_argument('--resumen', default='')
+    imp.add_argument('--pais', default='', help='País observado; exige fundamento territorial')
+    imp.add_argument('--fundamento-territorial', default='')
+    imp.add_argument('--clase-evidencia', choices=['unknown', 'direct', 'context'], default='unknown')
+    unavailable = commands.add_parser('registrar-fuente', help='Conservar una fuente pertinente que no pudo consultarse')
+    unavailable.add_argument('run')
+    unavailable.add_argument('source')
+    unavailable.add_argument('--motivo', required=True)
     annotate = commands.add_parser('anotar')
     annotate.add_argument('run')
     annotate.add_argument('signal', type=int)
@@ -54,7 +62,8 @@ def main(argv=None):
     try:
         result = {'ok': True}
         if args.command == 'iniciar':
-            result = {'run': store.start(Scope(args.objetivo, args.tema, args.mercado_idioma, args.fuentes, args.limite))}
+            result = {'run': store.start(Scope(args.objetivo, args.tema, args.mercado_idioma, args.fuentes,
+                                               args.limite, args.mercado_pais))}
         elif args.command == 'recopilar':
             scope = Scope(**store.result(args.run)['scope'])
             if args.fixtures:
@@ -69,10 +78,15 @@ def main(argv=None):
             result = store.result(args.run)
         elif args.command == 'importar-url':
             store._run(args.run)
-            row = import_url(args.url, args.resumen, HTTPClient())
+            row = import_url(args.url, args.resumen, HTTPClient(), args.pais, args.fundamento_territorial,
+                             args.clase_evidencia)
             sid = store.add(args.run, row)
             store.query(args.run, 'url', 'URL añadida explícitamente', row.url, row.access)
             result = asdict(row) | {'id': sid}
+        elif args.command == 'registrar-fuente':
+            if not args.source.strip() or not args.motivo.strip():
+                raise ValueError('La fuente inaccesible necesita nombre y motivo.')
+            store.query(args.run, args.source, 'Fuente pertinente prevista', '', 'unavailable', args.motivo)
         elif args.command == 'anotar':
             store.annotate(args.run, args.signal, json.loads(Path(args.file).read_text(encoding='utf-8-sig')))
         elif args.command == 'agrupar':

@@ -18,7 +18,7 @@ FIXTURES = ROOT / 'pruebas/fixtures/fuentes'
 
 def scope(**changes):
     data = dict(objective='Comprender fricciones', topic='repair', market_language='idioma inglés; mercado desconocido',
-                sources=['hn'], limit=10)
+                sources=['hn'], limit=10, market_country='')
     return Scope(**(data | changes))
 
 
@@ -27,7 +27,8 @@ def signal(key, **changes):
                 accessed_at='2026-09-17T12:00:00+00:00', published_at='2026-09-16T12:00:00+00:00',
                 access='verified', content_hash=f'hash-{key}', summary=f'Fricción sintética {key}',
                 actor='taller', problem='coordinar reparaciones', consequence='tiempo perdido',
-                alternative='llamadas', independence=key)
+                alternative='llamadas', independence=key, country='', territorial_basis='',
+                evidence_class='unknown')
     return Signal(**(data | changes))
 
 
@@ -68,6 +69,68 @@ class Rules(unittest.TestCase):
         for changes in ({'topic': ''}, {'sources': []}, {'limit': 0}, {'market_language': ''}):
             with self.assertRaises(ValueError):
                 self.store.start(scope(**changes))
+
+    def test_AR_R1_market_country_is_structured_and_optional(self):
+        argentina = self.store.start(scope(market_country='AR'))
+        self.assertEqual(self.store.result(argentina)['scope']['market_country'], 'AR')
+        self.assertEqual(self.store.result(self.run)['scope']['market_country'], '')
+        self.assertNotIn('Cobertura argentina:', self.store.report(self.run))
+        with self.assertRaises(ValueError):
+            self.store.start(scope(market_country='Argentina'))
+
+    def test_AR_R2_country_requires_basis_and_spanish_does_not_imply_argentina(self):
+        spanish = self.store.add(self.run, signal('es', summary='Relato en español'))
+        self.assertEqual(self.store.signals(self.run)[0]['country'], '')
+        with self.assertRaises(ValueError):
+            self.store.add(self.run, signal('ar-no-basis', country='AR', evidence_class='direct'))
+        self.store.annotate(self.run, spanish, {'country': 'AR', 'territorial_basis': 'El relato ubica el comercio en Córdoba',
+                                                'evidence_class': 'direct'})
+        self.assertEqual(self.store.signals(self.run)[0]['country'], 'AR')
+
+    def test_AR_R4_coverage_deduplicates_verified_local_direct_accounts(self):
+        run = self.store.start(scope(market_country='AR'))
+        local = dict(country='AR', territorial_basis='Actividad comercial ubicada en Argentina',
+                     evidence_class='direct')
+        a = self.store.add(run, signal('ar-1', **local, independence='episode-1'))
+        self.store.add(run, signal('ar-copy', **local, content_hash='hash-ar-1', independence='episode-copy'))
+        self.store.add(run, signal('global-es', country='US', territorial_basis='Relato ubicado en Estados Unidos',
+                                   evidence_class='direct', independence='global-1'))
+        self.store.add(run, signal('spanish-only', summary='Publicación global en español',
+                                   independence='global-2'))
+        report = self.store.report(run)
+        self.assertIn('Relatos argentinos verificados e independientes: **1**', report)
+        self.assertIn('Cobertura argentina: **insuficiente**', report)
+        b = self.store.add(run, signal('ar-2', **local, independence='episode-2'))
+        self.store.set_groups(run, [group([a, b])])
+        report = self.store.report(run)
+        self.assertIn('Relatos argentinos verificados e independientes: **2**', report)
+        self.assertIn('Cobertura argentina: **mínima alcanzada**', report)
+
+    def test_AR_R4_report_separates_all_provenance_classes(self):
+        run = self.store.start(scope(market_country='AR'))
+        self.store.add(run, signal('local', country='AR', territorial_basis='Comercio situado en Rosario',
+                                   evidence_class='direct'))
+        self.store.add(run, signal('context', country='AR', territorial_basis='Estadística nacional agregada',
+                                   evidence_class='context'))
+        self.store.add(run, signal('global', country='US', territorial_basis='Publicación ubicada en Estados Unidos',
+                                   evidence_class='direct'))
+        self.store.add(run, signal('unknown', summary='Publicación global en español'))
+        report = self.store.report(run)
+        for heading in ('Relatos argentinos', 'Contexto argentino', 'Señales globales', 'Procedencia desconocida'):
+            self.assertIn(f'### {heading}', report)
+
+    def test_AR_R7_historical_json_gets_unknown_provenance_defaults(self):
+        sid = self.store.add(self.run, signal('legacy'))
+        row = self.store.db.execute('SELECT data FROM signals WHERE id=?', (sid,)).fetchone()[0]
+        legacy = json.loads(row)
+        for field in ('country', 'territorial_basis', 'evidence_class'):
+            legacy.pop(field)
+        with self.store.db:
+            self.store.db.execute('UPDATE signals SET data=? WHERE id=?', (json.dumps(legacy), sid))
+        restored = Store(self.db)
+        self.addCleanup(restored.close)
+        loaded = restored.result(self.run)['signals'][0]
+        self.assertEqual((loaded['country'], loaded['territorial_basis'], loaded['evidence_class']), ('', '', 'unknown'))
 
     def test_R3_unverified_cannot_support_groups(self):
         sid = self.store.add(self.run, signal('1', access='blocked'))
@@ -192,6 +255,16 @@ class Connectors(unittest.TestCase):
         with patch.object(client, 'get', side_effect=OSError('403')):
             self.assertEqual(import_url('https://example.org/problem', '', client).access, 'blocked')
 
+    def test_AR_R3_import_records_observed_basis_but_blocked_url_never_counts(self):
+        client = FakeHTTP('url')
+        row = import_url('https://example.org/problem', 'Relato', client, country='AR',
+                         territorial_basis='La página identifica una pyme argentina', evidence_class='direct')
+        self.assertEqual((row.access, row.country, row.evidence_class), ('verified', 'AR', 'direct'))
+        with patch.object(client, 'get', side_effect=OSError('403')):
+            blocked = import_url('https://example.org/problem', '', client, country='AR',
+                                 territorial_basis='Resultado no abierto', evidence_class='direct')
+        self.assertEqual(blocked.access, 'blocked')
+
 
 class Security(unittest.TestCase):
     def test_private_network_and_credentials_rejected(self):
@@ -247,6 +320,36 @@ class EndToEnd(unittest.TestCase):
         guide = (ROOT / 'guias/descubrimiento.md').read_text(encoding='utf-8')
         for text in ('scripts/descubrir.py', 'sin tema', 'desconocida', 'no alcanza', 'independencia'):
             self.assertIn(text, guide)
+
+    def test_AR_E2E_scope_import_unavailable_source_and_reproducible_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / 'corpus.sqlite'
+            def cli(*args, expected=0):
+                proc = subprocess.run([sys.executable, str(ROOT / 'scripts/descubrir.py'), '--db', str(db), *args],
+                                      cwd=ROOT, capture_output=True, text=True, encoding='utf-8')
+                self.assertEqual(proc.returncode, expected, proc.stderr)
+                return proc.stdout
+            run = json.loads(cli('iniciar', '--objetivo', 'Problemas locales', '--tema', 'comercios',
+                                 '--mercado-idioma', 'español', '--mercado-pais', 'AR',
+                                 '--fuentes', 'hn', '--limite', '2'))['run']
+            cli('registrar-fuente', run, 'reddit', '--motivo', 'OAuth aprobado no disponible')
+            with patch('motor.sources.HTTPClient.get', return_value='<html>relato</html>'):
+                from scripts import descubrir
+                self.assertEqual(descubrir.main(['--db', str(db), 'importar-url', run, 'https://example.org/ar',
+                    '--resumen', 'Relato local', '--pais', 'AR', '--fundamento-territorial',
+                    'El relato ubica el comercio en Argentina', '--clase-evidencia', 'direct']), 0)
+            first = cli('informe', run)
+            self.assertEqual(first, cli('informe', run))
+            self.assertIn('reddit', first)
+            self.assertIn('OAuth aprobado no disponible', first)
+            self.assertIn('Cobertura argentina: **insuficiente**', first)
+
+    def test_AR_R6_protocol_requires_opening_and_classifying_local_sources(self):
+        guide = (ROOT / 'guias/descubrimiento.md').read_text(encoding='utf-8')
+        agents = (ROOT / 'AGENTS.md').read_text(encoding='utf-8')
+        for text in ('--mercado-pais AR', 'fundamento territorial', 'estadísticas agregadas', 'Reddit'):
+            self.assertIn(text, guide)
+        self.assertIn('mercado argentino', agents.lower())
 
 
 class CheckRunners(unittest.TestCase):
