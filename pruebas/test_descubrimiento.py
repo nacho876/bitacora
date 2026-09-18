@@ -1,5 +1,7 @@
 """Synthetic, offline acceptance tests for R1–R8 and E2E-5."""
 import json
+import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -245,6 +247,44 @@ class EndToEnd(unittest.TestCase):
         guide = (ROOT / 'guias/descubrimiento.md').read_text(encoding='utf-8')
         for text in ('scripts/descubrir.py', 'sin tema', 'desconocida', 'no alcanza', 'independencia'):
             self.assertIn(text, guide)
+
+
+class CheckRunners(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location('discovery_ci_checks', ROOT / 'scripts/ci/check.py')
+        self.check = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.check)
+
+    def test_full_suite_calls_standalone_e2e_and_propagates_failure(self):
+        with patch.object(self.check, 'run', side_effect=[0, 23]) as runner:
+            self.assertEqual(self.check.main('full-suite'), 23)
+        self.assertEqual(runner.call_args_list[-1].args[0], ['scripts/ci/e2e'])
+        with patch.object(self.check, 'run', return_value=17) as runner:
+            self.assertEqual(self.check.main('full-suite'), 17)
+            self.assertEqual(runner.call_count, 1)
+
+    def test_e2e_provisions_first_and_stops_on_failure(self):
+        with patch.object(self.check, 'run', return_value=29) as runner:
+            self.assertEqual(self.check.main('e2e'), 29)
+        self.assertEqual(runner.call_count, 1)
+        self.assertEqual(runner.call_args.args[0], ['scripts/ci/provision-e2e'])
+        with patch.object(self.check, 'run', side_effect=[0, 31]) as runner:
+            self.assertEqual(self.check.main('e2e'), 31)
+        self.assertEqual(runner.call_count, 2)
+
+    def test_provision_independent_environment_and_destination_guards(self):
+        safe = ROOT / '.runtime/e2e'
+        cases = [('production', str(safe)), ('prod', str(safe)),
+                 ('local', str(ROOT / 'bitacora')), ('test', str(safe / 'production')),
+                 ('e2e', str(safe / '..' / '..' / 'bitacora'))]
+        for environment, destination in cases:
+            with self.subTest(environment=environment, destination=destination):
+                with patch.dict(os.environ, {'BITACORA_ENV': environment, 'BITACORA_E2E_ROOT': destination}):
+                    with patch.object(Path, 'mkdir') as mkdir:
+                        self.assertEqual(self.check.main('provision-e2e'), 1)
+                        mkdir.assert_not_called()
+        with patch.dict(os.environ, {'BITACORA_ENV': 'test', 'BITACORA_E2E_ROOT': str(safe)}):
+            self.assertEqual(self.check.e2e_destination(), safe.resolve())
 
 
 if __name__ == '__main__':

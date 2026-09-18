@@ -37,6 +37,13 @@ respuestas sintéticas y transporte sustituible; ningún check local consulta in
 comprueba sintaxis y protocolo; seguridad analiza patrones peligrosos y prueba límites de URL
 y archivos ignorados. Ninguno certifica comportamiento de un modelo ni seguridad absoluta.
 
+`full-suite` detiene la ejecución ante un fallo y después invoca la entrada autónoma `e2e`.
+`e2e` ejecuta primero `provision-e2e` y propaga su fallo antes de iniciar pruebas. El entorno
+`BITACORA_ENV` admite `local` (predeterminado), `test` o `e2e`; rechaza `prod` y `production`.
+Independientemente, `BITACORA_E2E_ROOT` debe resolver dentro de `.runtime/e2e` y no contener un
+componente `prod` o `production`. Ese destino aloja los directorios temporales de las pruebas,
+sin tocar el corpus personal. El provisionador valida ambas guardas antes de crear directorios.
+
 Para extraer una ejecución existente sin inferencias:
 
 ```text
