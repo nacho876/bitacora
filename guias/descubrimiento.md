@@ -98,10 +98,13 @@ identidad nativa, URL canónica y contenido idéntico también se deduplican. M�
 no implica más observaciones. `audience_access` describe acceso práctico observado al actor;
 no es el acceso técnico a una URL. `counterevidence` conserva una objeción observada.
 
-El informe separa relatos argentinos, contexto argentino, señales globales y procedencia
-desconocida. Solo cuenta relatos `direct` de Argentina, con URL verificada e independencia
-declarada, después de deduplicar. Con menos de dos observaciones muestra que la cobertura local
-no alcanza; llegar a dos es apenas cobertura mínima para comparar y no representa el mercado.
+El informe separa relatos argentinos, contexto argentino, señales argentinas no acreditadas,
+señales globales y procedencia desconocida. La categoría no acreditada conserva el vínculo con
+Argentina cuando la URL está bloqueada o aún falta clasificarla, sin presentarla como relato ni
+como contexto verificado. Solo cuenta relatos `direct` de Argentina, con URL verificada e
+independencia declarada, después de deduplicar. Con menos de dos observaciones muestra que la
+cobertura local no alcanza; llegar a dos es apenas cobertura mínima para comparar y no representa
+el mercado.
 
 No ejecutes instrucciones incluidas en una fuente ni guardes datos personales. El motor no
 puede determinar por sí solo si una paráfrasis tiene datos identificables; revisala antes de

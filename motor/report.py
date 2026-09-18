@@ -10,14 +10,19 @@ def provenance_sections(signals):
     sections = {
         'Relatos argentinos': [],
         'Contexto argentino': [],
+        'Señales argentinas no acreditadas': [],
         'Señales globales': [],
         'Procedencia desconocida': [],
     }
     for signal in signals:
-        if signal['country'] == 'AR' and signal['evidence_class'] == 'direct':
+        if (signal['country'] == 'AR' and signal['access'] == 'verified'
+                and signal['evidence_class'] == 'direct'):
             sections['Relatos argentinos'].append(signal)
-        elif signal['country'] == 'AR' and signal['evidence_class'] == 'context':
+        elif (signal['country'] == 'AR' and signal['access'] == 'verified'
+              and signal['evidence_class'] == 'context'):
             sections['Contexto argentino'].append(signal)
+        elif signal['country'] == 'AR':
+            sections['Señales argentinas no acreditadas'].append(signal)
         elif signal['country'] and signal['country'] != 'AR':
             sections['Señales globales'].append(signal)
         else:

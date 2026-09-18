@@ -39,6 +39,12 @@ def group(ids):
                             'alternative': {'value': 'parcial', 'evidence': ids[:1]}})
 
 
+def report_section(report, heading):
+    start = report.index(f'### {heading}')
+    end = report.find('\n### ', start + len(heading) + 4)
+    return report[start:end if end >= 0 else len(report)]
+
+
 class FakeHTTP:
     def __init__(self, source):
         self.data = json.loads((FIXTURES / f'{source}.json').read_text(encoding='utf-8'))
@@ -106,6 +112,18 @@ class Rules(unittest.TestCase):
         self.assertIn('Relatos argentinos verificados e independientes: **2**', report)
         self.assertIn('Cobertura argentina: **mínima alcanzada**', report)
 
+    def test_AR_R4_each_coverage_clause_excludes_an_observation(self):
+        run = self.store.start(scope(market_country='AR'))
+        local = dict(country='AR', territorial_basis='Actividad ubicada en Argentina')
+        self.store.add(run, signal('qualifying', **local, evidence_class='direct', independence='episode-1'))
+        self.store.add(run, signal('blocked', **local, access='blocked', evidence_class='direct',
+                                   independence='episode-blocked'))
+        self.store.add(run, signal('context', **local, evidence_class='context', independence='episode-context'))
+        self.store.add(run, signal('dependent', **local, evidence_class='direct', independence=''))
+        report = self.store.report(run)
+        self.assertIn('Relatos argentinos verificados e independientes: **1**', report)
+        self.assertIn('Cobertura argentina: **insuficiente**', report)
+
     def test_AR_R4_report_separates_all_provenance_classes(self):
         run = self.store.start(scope(market_country='AR'))
         self.store.add(run, signal('local', country='AR', territorial_basis='Comercio situado en Rosario',
@@ -118,6 +136,22 @@ class Rules(unittest.TestCase):
         report = self.store.report(run)
         for heading in ('Relatos argentinos', 'Contexto argentino', 'Señales globales', 'Procedencia desconocida'):
             self.assertIn(f'### {heading}', report)
+
+    def test_AR_R4_unverified_or_unclassified_argentine_signals_are_not_local_accounts(self):
+        run = self.store.start(scope(market_country='AR'))
+        basis = 'La página identifica actividad en Argentina'
+        blocked = self.store.add(run, signal('blocked-ar', access='blocked', country='AR',
+                                             territorial_basis=basis, evidence_class='direct'))
+        unclassified = self.store.add(run, signal('unknown-ar', country='AR', territorial_basis=basis,
+                                                  evidence_class='unknown'))
+        report = self.store.report(run)
+        local_accounts = report_section(report, 'Relatos argentinos')
+        honest = report_section(report, 'Señales argentinas no acreditadas')
+        self.assertNotIn(f'S{blocked} ', local_accounts)
+        self.assertNotIn(f'S{unclassified} ', local_accounts)
+        self.assertIn(f'S{blocked} ', honest)
+        self.assertIn(f'S{unclassified} ', honest)
+        self.assertIn('Procedencia: AR · clase: unknown', honest)
 
     def test_AR_R7_historical_json_gets_unknown_provenance_defaults(self):
         sid = self.store.add(self.run, signal('legacy'))
@@ -264,6 +298,16 @@ class Connectors(unittest.TestCase):
             blocked = import_url('https://example.org/problem', '', client, country='AR',
                                  territorial_basis='Resultado no abierto', evidence_class='direct')
         self.assertEqual(blocked.access, 'blocked')
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Store(Path(tmp) / 'corpus.sqlite')
+            run = store.start(scope(market_country='AR'))
+            sid = store.add(run, blocked)
+            report = store.report(run)
+            store.close()
+        self.assertIn('Relatos argentinos verificados e independientes: **0**', report)
+        self.assertIn('Cobertura argentina: **insuficiente**', report)
+        self.assertNotIn(f'S{sid} ', report_section(report, 'Relatos argentinos'))
+        self.assertIn(f'S{sid} ', report_section(report, 'Señales argentinas no acreditadas'))
 
 
 class Security(unittest.TestCase):
