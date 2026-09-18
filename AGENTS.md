@@ -71,6 +71,11 @@ consultar fuentes. Conservá objetivo, tema o actor, mercado o idioma, fuentes y
 el motor local. Explicá que recopilás una muestra acotada y después interpretás sus señales.
 No sustituyas la consulta por hipótesis inventadas. El informe y su corpus quedan guardados;
 si no hay Python o acceso público disponible, declaralo y no afirmes haber ejecutado el motor.
+Cuando el objetivo sea el mercado argentino, declaralo como `AR`, priorizá páginas con vínculo
+territorial observable y abrí cada fuente decisiva antes de importarla. Separá relatos locales,
+contexto agregado, señales globales y procedencia desconocida. Si Reddit u otra fuente pertinente
+requiere acceso no disponible, registrá el motivo: no lo reemplaces con scraping ni con señales
+globales y no presentes el idioma español como prueba de procedencia argentina.
 
 ## Comprobaciones locales del repositorio
 

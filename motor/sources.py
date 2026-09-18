@@ -61,15 +61,17 @@ def date(value):
     return datetime.fromtimestamp(value, timezone.utc).isoformat() if isinstance(value, (int, float)) else str(value or '')
 
 
-def import_url(url, summary, client):
+def import_url(url, summary, client, country='', territorial_basis='', evidence_class='unknown'):
     url = canonical_url(url)
+    provenance = dict(country=country, territorial_basis=territorial_basis, evidence_class=evidence_class)
     try:
         content = client.get(url)
         if not content:
             raise ValueError('Fuente vacía')
-        return Signal('url', url, url, now(), access='verified', content_hash=digest(content), summary=summary)
+        return Signal('url', url, url, now(), access='verified', content_hash=digest(content), summary=summary,
+                      **provenance)
     except (OSError, ValueError):
-        return Signal('url', url, url, now(), access='blocked')
+        return Signal('url', url, url, now(), access='blocked', **provenance)
 
 
 def collect(scope, source, client):

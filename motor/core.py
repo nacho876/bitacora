@@ -28,12 +28,16 @@ class Scope:
     market_language: str
     sources: list
     limit: int
+    market_country: str = ''
 
     def validate(self):
         if not all(isinstance(x, str) and x.strip() for x in (self.objective, self.topic, self.market_language)):
             raise ValueError('Antes de buscar, definí objetivo, tema o actor y mercado o idioma.')
         if not self.sources or not isinstance(self.limit, int) or not 1 <= self.limit <= 100:
             raise ValueError('Declarar fuentes y un límite entre 1 y 100 por fuente.')
+        if self.market_country and (len(self.market_country) != 2 or not self.market_country.isupper()
+                                    or not self.market_country.isalpha()):
+            raise ValueError('El país de mercado usa un código ISO 3166-1 alfa-2, por ejemplo AR.')
         for source in self.sources:
             if source not in ('hn', 'se') and not source.startswith(('se:', 'discourse:')):
                 raise ValueError(f'Fuente no admitida: {source}')
@@ -58,11 +62,34 @@ class Signal:
     audience_access: str = ''
     counterevidence: str = ''
     independence: str = ''
+    country: str = ''
+    territorial_basis: str = ''
+    evidence_class: str = 'unknown'
 
 
 DIMENSIONS = {'consequence': 'consequence', 'alternative': 'alternative',
               'access': 'audience_access', 'counterevidence': 'counterevidence'}
 VALUES = {'fuerte', 'parcial', 'ausente', 'desconocida'}
+EVIDENCE_CLASSES = {'unknown', 'direct', 'context'}
+
+
+def normalized_signal(data):
+    """Load current and historical JSON with conservative provenance defaults."""
+    data = dict(data)
+    data.setdefault('country', '')
+    data.setdefault('territorial_basis', '')
+    data.setdefault('evidence_class', 'unknown')
+    country = data['country']
+    if country and (not isinstance(country, str) or len(country) != 2 or not country.isupper()
+                    or not country.isalpha()):
+        raise ValueError('El país de una señal usa un código ISO 3166-1 alfa-2.')
+    if country and not isinstance(data['territorial_basis'], str):
+        raise ValueError('El fundamento territorial debe ser texto.')
+    if country and not data['territorial_basis'].strip():
+        raise ValueError('Marcar un país exige un fundamento territorial observado.')
+    if data['evidence_class'] not in EVIDENCE_CLASSES:
+        raise ValueError('Clase de evidencia inválida: usar unknown, direct o context.')
+    return data
 
 
 class Store:
@@ -111,20 +138,21 @@ class Store:
             raise ValueError('Estado de acceso inválido.')
         if not signal.source or not signal.native_id or not signal.accessed_at:
             raise ValueError('La señal necesita fuente, identificador y fecha de consulta.')
+        data = normalized_signal(asdict(signal))
         with self.db:
             self.db.execute('INSERT OR IGNORE INTO signals(run,source,native_id,data) VALUES(?,?,?,?)',
-                            (run, signal.source, signal.native_id, json.dumps(asdict(signal), ensure_ascii=False)))
+                            (run, signal.source, signal.native_id, json.dumps(data, ensure_ascii=False)))
         return self.db.execute('SELECT id FROM signals WHERE run=? AND source=? AND native_id=?',
                                (run, signal.source, signal.native_id)).fetchone()[0]
 
     def signals(self, run):
         self._run(run)
-        return [json.loads(row['data']) | {'id': row['id']} for row in
+        return [normalized_signal(json.loads(row['data'])) | {'id': row['id']} for row in
                 self.db.execute('SELECT id,data FROM signals WHERE run=? ORDER BY id', (run,))]
 
     def annotate(self, run, sid, fields):
         allowed = {'summary', 'actor', 'problem', 'consequence', 'alternative', 'audience_access',
-                   'counterevidence', 'independence'}
+                   'counterevidence', 'independence', 'country', 'territorial_basis', 'evidence_class'}
         if not fields or set(fields) - allowed or any(not isinstance(v, str) or len(v) > 1000 for v in fields.values()):
             raise ValueError('Solo paráfrasis breves y campos de interpretación; no identidad ni estado de acceso.')
         row = next((s for s in self.signals(run) if s['id'] == sid), None)
@@ -132,12 +160,13 @@ class Store:
             raise ValueError('Señal ajena o inexistente.')
         row.pop('id')
         row.update(fields)
+        row = normalized_signal(row)
         with self.db:
             self.db.execute('UPDATE signals SET data=? WHERE run=? AND id=?', (json.dumps(row, ensure_ascii=False), run, sid))
 
-    def query(self, run, source, query, url, status):
+    def query(self, run, source, query, url, status, reason=''):
         self._run(run)
-        data = dict(source=source, query=query, url=url, status=status, at=now())
+        data = dict(source=source, query=query, url=url, status=status, reason=reason, at=now())
         with self.db:
             self.db.execute('INSERT INTO queries(run,data) VALUES(?,?)', (run, json.dumps(data, ensure_ascii=False)))
 
@@ -233,7 +262,9 @@ class Store:
                 used_observations.update(observations)
             if len(hypotheses) == 5:
                 break
-        return dict(run=run, scope=json.loads(row['scope']), created=row['created'], synthetic=bool(row['synthetic']),
+        scope = json.loads(row['scope'])
+        scope.setdefault('market_country', '')
+        return dict(run=run, scope=scope, created=row['created'], synthetic=bool(row['synthetic']),
                     signals=[s | {'duplicate_of': roots[s['id']] if roots[s['id']] != s['id'] else None} for s in signals],
                     queries=[json.loads(q[0]) for q in self.db.execute('SELECT data FROM queries WHERE run=? ORDER BY id', (run,))],
                     relations=[dict(r) for r in self.db.execute('SELECT a,b,kind FROM relations WHERE run=? ORDER BY a,b,kind', (run,))],
