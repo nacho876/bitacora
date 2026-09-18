@@ -19,7 +19,15 @@ Al pausar, conservás un resumen de opciones, decisiones e incertidumbre pendien
 
 ## Empezá en tres pasos
 
-Necesitás un asistente de código con IA capaz de leer `AGENTS.md` —por ejemplo, [Claude Code](https://claude.com/claude-code) o [Cursor](https://cursor.com)—; la mayoría de estos asistentes requieren una suscripción de pago. Python **no** hace falta para usar Bitácora: solo lo necesitás si querés correr las comprobaciones del protocolo (sección más abajo).
+Necesitás un asistente de código con IA capaz de leer `AGENTS.md` —por ejemplo, [Claude Code](https://claude.com/claude-code) o [Cursor](https://cursor.com)—; la mayoría de estos asistentes requieren una suscripción de pago. Python **no** hace falta para conversar; el motor de descubrimiento y las comprobaciones requieren Python 3.10 o posterior, sin paquetes externos.
+
+Podés pedir «busquemos problemas de reparación en fuentes en inglés». El asistente acota la
+búsqueda y usa un motor local con Hacker News, Stack Exchange y foros Discourse públicos.
+Conserva evidencia y copias en SQLite, propone grupos y genera informes reproducibles con
+incertidumbres. La interpretación sigue a cargo del asistente; puede devolver pocas hipótesis
+o ninguna. No incluye Reddit, X, vigilancia automática ni servidor. Consultá
+[el recorrido y los comandos](guias/descubrimiento.md). Los datos quedan bajo `.runtime/` y
+los informes bajo `bitacora/`, fuera de Git; una copia local no es una copia de seguridad.
 
 1. Cloná o descargá este repositorio en tu computadora.
 2. Con Claude Code instalado y autenticado, abrí una terminal en la carpeta descargada y ejecutá `claude`. Permití leer las instrucciones del proyecto: `CLAUDE.md` remite a [`AGENTS.md`](AGENTS.md).

@@ -1,6 +1,6 @@
 # Contribuir a Bitácora
 
-El producto es un protocolo conversacional. `AGENTS.md` describe la conducta de la guía;
+El producto combina un protocolo conversacional y un motor local Python/SQLite. `AGENTS.md` describe la conducta de la guía;
 no convierte a quien revisa el código en una persona emprendedora. Conservá la separación
 entre hipótesis, fuentes verificadas y decisiones de la persona.
 
@@ -18,13 +18,24 @@ retomar. Comprobá en las lecturas que solo se cargó el resumen activo. Si hay 
 previas, la guía debe preguntar la ruta antes de leerlas o migrarlas. No publiques archivos
 personales ni logs: `.runtime/` y las bitácoras personales quedan fuera de Git.
 
-Desde la raíz, con Python y Git disponibles:
+Desde la raíz, con Python 3.10 o posterior y Git disponibles, sin dependencias externas:
 
 ```text
 python scripts/lint_protocolo.py
 python -m unittest discover -s pruebas -v
 python scripts/evaluar_conversaciones.py --help
+python scripts/ci/full-suite
+python scripts/ci/lint
+python scripts/ci/security
+python scripts/ci/provision-e2e
+python scripts/ci/e2e
 ```
+
+El motor y su formato se explican en `guias/descubrimiento.md`. Las pruebas de fuentes usan
+respuestas sintéticas y transporte sustituible; ningún check local consulta internet.
+`full-suite` incluye la regresión publicada; `e2e` recorre CLI, SQLite y regeneración. El lint
+comprueba sintaxis y protocolo; seguridad analiza patrones peligrosos y prueba límites de URL
+y archivos ignorados. Ninguno certifica comportamiento de un modelo ni seguridad absoluta.
 
 Para extraer una ejecución existente sin inferencias:
 

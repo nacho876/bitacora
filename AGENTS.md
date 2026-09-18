@@ -64,6 +64,20 @@ objetivo: no lo deduzcas de ahí.
    después de elegir explícitamente una oportunidad, proponé un experimento pequeño; no lo
    ejecutes por la persona.
 
+## Descubrimiento bajo demanda
+
+Cuando la persona pide buscar problemas en internet, leé `guias/descubrimiento.md` antes de
+consultar fuentes. Conservá objetivo, tema o actor, mercado o idioma, fuentes y límite con
+el motor local. Explicá que recopilás una muestra acotada y después interpretás sus señales.
+No sustituyas la consulta por hipótesis inventadas. El informe y su corpus quedan guardados;
+si no hay Python o acceso público disponible, declaralo y no afirmes haber ejecutado el motor.
+
+## Comprobaciones locales del repositorio
+
+Quien modifica el código ejecuta `python scripts/ci/full-suite`, `python scripts/ci/lint`,
+`python scripts/ci/security`, `python scripts/ci/provision-e2e` y `python scripts/ci/e2e`.
+Estas entradas son locales y la suite no usa internet. No son pasos de la conversación.
+
 ## Memoria y detalle
 
 Antes de guardar, retomar o resolver privacidad, leé `guias/memoria.md`: esta lectura

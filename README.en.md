@@ -23,7 +23,15 @@ When you pause, your personal file keeps a summary of options, decisions and rem
 
 ## Start in three steps
 
-You need an AI coding assistant able to read `AGENTS.md` — for example, [Claude Code](https://claude.com/claude-code) or [Cursor](https://cursor.com); most of these assistants require a paid subscription. Python is **not** required to use Bitácora: you only need it to run the protocol's local checks (see below).
+You need an AI coding assistant able to read `AGENTS.md` — for example, [Claude Code](https://claude.com/claude-code) or [Cursor](https://cursor.com); most of these assistants require a paid subscription. Python is **not** required for conversation; the discovery engine and local checks require Python 3.10 or newer, with no external packages.
+
+Ask the assistant to research problems in a specific sector and language. A local engine
+queries Hacker News, Stack Exchange and public Discourse forums, preserves evidence in SQLite,
+deduplicates observations and generates reproducible reports. The assistant interprets the
+evidence; sparse evidence can produce fewer hypotheses or none. There is no Reddit, X,
+automatic monitoring or server. See [the workflow and commands](guias/descubrimiento.md)
+(Spanish). Data lives in `.runtime/` and reports in `bitacora/`, excluded from Git; a local
+copy is not a backup.
 
 1. Clone or download this repository to your computer.
 2. With Claude Code installed and authenticated, open a terminal in the downloaded folder and run `claude`. Allow reading the project instructions: `CLAUDE.md` points to [`AGENTS.md`](AGENTS.md).

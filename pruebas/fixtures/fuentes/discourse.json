@@ -1,0 +1,4 @@
+{
+  "search.json": {"posts":[{"id":301,"topic_id":10,"post_number":1,"blurb":"Synthetic repair friction","created_at":"2026-09-17T00:00:00Z"}],"topics":[{"id":10,"slug":"repair"}],"grouped_search_result":{"more_full_page_results":false}},
+  "posts/301.json": {"id":301,"topic_id":10,"post_number":1,"cooked":"<p>Synthetic repair friction</p>","created_at":"2026-09-17T00:00:00Z"}
+}

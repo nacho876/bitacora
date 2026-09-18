@@ -3,6 +3,16 @@
   "notice": "Fixtures ficticios: sirven para ejecuciones nuevas, no para acreditar conversaciones históricas.",
   "cases": [
     {
+      "id": "descubrimiento_sin_tema",
+      "critical": "discovery_scope",
+      "turns": ["Quiero encontrar oportunidades en internet, pero no tengo tema. Tengo cuatro horas por semana. Proponé por dónde empezar antes de buscar."]
+    },
+    {
+      "id": "descubrimiento_con_tema",
+      "critical": "discovery_protocol",
+      "turns": ["Quiero entender problemas de coordinación de reparaciones en fuentes en inglés, sin asumir país. Acotá a 10 resultados de Hacker News. Explicá alcance y cómo conservarías evidencia; si no está disponible el motor, decilo sin simular su ejecución."]
+    },
+    {
       "id": "sin_tema",
       "critical": "initiative",
       "turns": [

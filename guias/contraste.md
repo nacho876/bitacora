@@ -49,3 +49,9 @@ solo si fue verificado), acceso posible y soporte. Si no la hay, decí que no ha
 demanda ni brecha. Proponé el próximo paso razonado que reduzca esa incertidumbre (por ejemplo,
 observar el proceso actual, contrastarlo con una alternativa o hablar con quien decide el
 gasto), sin exigir otra confirmación para sintetizar ni elegir por la persona.
+# Corpus de descubrimiento
+
+Si el candidato viene del motor local, consultá su informe y las URLs originales según
+`guias/descubrimiento.md`. Conservá los identificadores de señales y las relaciones de copia.
+El nivel sustentado describe respaldo del problema; no demuestra compras ni oportunidad
+comercial. Una dimensión desconocida sigue desconocida durante el contraste.
